@@ -1,0 +1,79 @@
+import numpy as np
+
+def read_matrix(prompt):
+    print(prompt)  # Displaying the prompt to the user.
+    # Reading a 3x3 matrix from user input and converting it to a numpy array.
+    return np.array([list(map(int, input("Enter row {} (separated by spaces): ".format(i+1)).split())) for i in range(3)])
+
+# Reading the start and end matrices from the user.
+start_matrix = read_matrix("Enter the start matrix (3x3) row by row:")
+end_matrix = read_matrix("Enter the end matrix (3x3) row by row:")
+
+# Initializing lists for visited, open, and closed matrices.
+visited = []
+open = []
+closed = []
+
+closed.append(start_matrix)  # Adding the start matrix to the closed list.
+
+def heuristic(matrix, end_matrix):
+    # Calculating the heuristic as the count of non-matching elements with the end matrix.
+    return 9 - np.count_nonzero(matrix == end_matrix)
+
+def possibleChildren(matrix, e_matrix):
+    visited.append(matrix)  # Marking the current matrix as visited.
+    [i],[j] = np.where(matrix == 0)  # Finding the position of the zero (empty space).
+    # Defining possible directions to move the empty space.
+    direction = [[-1, 0], [0, -1], [1, 0],[0, 1]]
+    children = []
+
+    for dir in direction:
+        ni, nj = i + dir[0], j + dir[1]
+        if 0 <= ni <= 2 and 0 <= nj <= 2:  # Checking if the new position is valid.
+            newMatrix = matrix.copy()
+            # Swapping the empty space with the adjacent element.
+            newMatrix[i, j], newMatrix[ni, nj] = matrix[ni, nj], matrix[i, j]
+            # Checking if the new matrix is not already visited.
+            if not any(np.array_equal(newMatrix, visited_mat) for visited_mat in visited):
+                visited.append(newMatrix)  # Marking the new matrix as visited.
+                # Calculating heuristic for the new matrix.
+                newMatrix_heu = heuristic(newMatrix, e_matrix)
+                children.append([newMatrix_heu, newMatrix])
+
+    # Sorting children matrices based on their heuristic value.
+    children.sort(key=lambda x: x[0])
+    return [child[1] for child in children]
+
+def main(start_matrix, end_matrix):
+    # Calculating the heuristic value for the start matrix.
+    start_heuristic = heuristic(start_matrix, end_matrix)
+
+    if start_heuristic == 0:  # Checking if the start matrix is already the end matrix.
+        for node in closed:
+            print(node)
+        return True
+    else:
+        # Getting possible children for the start matrix.
+        children = possibleChildren(start_matrix, end_matrix)
+        for child in children:
+            open.append(child)  # Adding children to the open list.
+
+        while open:
+            newMatrix = open.pop(0)  # Taking the first matrix from the open list.
+            newHeu = heuristic(newMatrix, end_matrix)
+            closed.append(newMatrix)  # Adding the new matrix to the closed list.
+
+            if newHeu == 0:  # Checking if the new matrix is the end matrix.
+                for node in closed:
+                    print(node)
+                return True
+            else:
+                # Getting possible children for the new matrix.
+                children = possibleChildren(newMatrix, end_matrix)
+                for child in children:
+                    open.append(child)  # Adding children to the open list.
+
+        return False
+
+if __name__ == "__main__":
+    main(start_matrix, end_matrix)  # Executing the main function.
